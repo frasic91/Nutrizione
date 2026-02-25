@@ -101,6 +101,7 @@
 
 <button onclick="calcola()">Salva Giorno</button>
 <button class="reset-btn" onclick="resetSettimana()">Cancella Settimana</button>
+<button onclick="downloadExcel()">Scarica Excel</button>
 
 <table>
     <thead>
@@ -174,7 +175,6 @@ function calcola() {
 
     localStorage.setItem("settimana", JSON.stringify(dati));
 
-    // Resetta i campi
     document.getElementById("km").value = '';
     document.getElementById("deficit").value = '';
     document.getElementById("proteine").value = '';
@@ -218,7 +218,6 @@ function aggiornaTabella() {
             totProPerc += d.proteinePerc;
             totCarbPerc += d.carboPerc;
             totGrassPerc += d.grassiPerc;
-
             count++;
         }
     });
@@ -242,7 +241,52 @@ function resetSettimana() {
     }
 }
 
-// Aggiorna la tabella all'apertura della pagina
+function downloadExcel() {
+    if (Object.keys(dati).length === 0) {
+        alert("Non ci sono dati da scaricare!");
+        return;
+    }
+
+    let csvContent = "Giorno,% Proteine,% Carbo,% Grassi,Km corsa,Calorie,Proteine (g),Carbo (g),Grassi (g)\n";
+
+    giorniOrdine.forEach(giorno => {
+        const d = dati[giorno];
+        if(d) {
+            csvContent += `${giorno},${d.proteinePerc},${d.carboPerc},${d.grassiPerc},${d.km.toFixed(1)},${d.calorie.toFixed(0)},${d.proteine.toFixed(1)},${d.carbo.toFixed(1)},${d.grassi.toFixed(1)}\n`;
+        }
+    });
+
+    // Totali
+    let totCal = 0, totPro = 0, totCarb = 0, totGrass = 0, totKm = 0;
+    let totProPerc = 0, totCarbPerc = 0, totGrassPerc = 0;
+    let count = 0;
+    giorniOrdine.forEach(giorno => {
+        const d = dati[giorno];
+        if(d) {
+            totCal += d.calorie;
+            totPro += d.proteine;
+            totCarb += d.carbo;
+            totGrass += d.grassi;
+            totKm += d.km;
+            totProPerc += d.proteinePerc;
+            totCarbPerc += d.carboPerc;
+            totGrassPerc += d.grassiPerc;
+            count++;
+        }
+    });
+
+    csvContent += `Totale Settimanale,${(totProPerc/count).toFixed(1)},${(totCarbPerc/count).toFixed(1)},${(totGrassPerc/count).toFixed(1)},${totKm.toFixed(1)},${totCal.toFixed(0)},${totPro.toFixed(1)},${totCarb.toFixed(1)},${totGrass.toFixed(1)}\n`;
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "SettimanaNutrizione.csv";
+    link.style.display = "none";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
 aggiornaTabella();
 </script>
 
