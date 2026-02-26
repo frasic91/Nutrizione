@@ -1,293 +1,298 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-    <meta charset="UTF-8">
-    <title>Calcolatore Settimanale Nutrizione</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 900px;
-            margin: auto;
-            padding: 20px;
-            background-color: #f4f4f4;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calcolatore Nutrizione Settimanale</title>
 
-        h2 {
-            text-align: center;
-        }
-
-        input, select, button {
-            padding: 8px;
-            margin: 5px 0;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        button {
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-
-        button:hover {
-            background-color: #45a049;
-        }
-
-        .reset-btn {
-            background-color: #f44336;
-        }
-
-        .reset-btn:hover {
-            background-color: #da190b;
-        }
-
-        table {
-            width: 100%;
-            margin-top: 20px;
-            border-collapse: collapse;
-            background: white;
-        }
-
-        th, td {
-            padding: 8px;
-            border: 1px solid #ccc;
-            text-align: center;
-        }
-
-        th {
-            background-color: #ddd;
-        }
-
-        .totale {
-            font-weight: bold;
-            background-color: #e0ffe0;
-        }
-    </style>
+<style>
+*{box-sizing:border-box;}
+body{font-family:Arial,sans-serif;margin:0;padding:15px;background:#f4f4f4;}
+.container{max-width:900px;margin:auto;background:white;padding:20px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.1);}
+h2{text-align:center;}
+label{font-weight:bold;font-size:14px;}
+input,select{width:100%;padding:12px;margin:6px 0 12px 0;border-radius:8px;border:1px solid #ccc;font-size:16px;}
+button{width:100%;padding:14px;margin-top:10px;border:none;border-radius:10px;font-size:16px;cursor:pointer;}
+.primary{background:#4CAF50;color:white;}
+.reset-btn{background:#f44336;color:white;}
+.download-btn{background:#2196F3;color:white;}
+.table-wrapper{overflow-x:auto;margin-top:20px;}
+table{width:100%;border-collapse:collapse;min-width:700px;}
+th,td{padding:8px;border:1px solid #ddd;text-align:center;font-size:14px;}
+th{background:#eee;}
+.totale{font-weight:bold;background:#e0ffe0;}
+.hidden{display:none;}
+</style>
 </head>
 <body>
+<div class="container">
 
 <h2>Calcolatore Nutrizione Settimanale</h2>
 
-<label for="peso">Peso Kg Obiettivo:</label>
-<input type="number" id="peso" min="0" step="0.1" value="0" placeholder="Inserisci peso in kg">
-<p>Valore peso: <span id="pesoDisplay">0</span> kg</p>
+<label>Peso (kg)</label>
+<input type="number" id="peso" step="0.1">
+<p>Peso: <span id="pesoDisplay">0</span> kg</p>
 
-<label for="giorno">Giorno:</label>
-<select id="giorno">
-    <option value="Lunedì">Lunedì</option>
-    <option value="Martedì">Martedì</option>
-    <option value="Mercoledì">Mercoledì</option>
-    <option value="Giovedì">Giovedì</option>
-    <option value="Venerdì">Venerdì</option>
-    <option value="Sabato">Sabato</option>
-    <option value="Domenica">Domenica</option>
+<label>Altezza (cm)</label>
+<input type="number" id="altezza">
+
+<label>Età</label>
+<input type="number" id="eta">
+
+<label>Sesso</label>
+<select id="sesso">
+<option value="uomo">Uomo</option>
+<option value="donna">Donna</option>
 </select>
 
-<label for="km">Km corsa:</label>
-<input type="number" id="km" min="0" step="0.1" placeholder="Inserisci km corsa">
+<label>Livello attività</label>
+<select id="attivita">
+<option value="1.2">Sedentario</option>
+<option value="1.375">Leggermente attivo</option>
+<option value="1.55" selected>Moderatamente attivo</option>
+<option value="1.725">Molto attivo</option>
+<option value="1.9">Estremamente attivo</option>
+</select>
 
-<label for="deficit">Deficit calorico:</label>
-<input type="number" id="deficit" min="0" step="1" placeholder="Inserisci deficit calorico">
+<label><input type="checkbox" id="manualBMR"> Inserisci BMR manualmente</label>
+<input type="number" id="manualBMRInput" class="hidden" placeholder="Calorie basali">
 
-<label for="proteine">Proteine in % (es. 20):</label>
-<input type="number" id="proteine" min="0" max="100" step="1" placeholder="Inserisci % proteine">
+<label><input type="checkbox" id="manualNEAT"> Inserisci NEAT manualmente</label>
+<input type="number" id="manualNEATInput" class="hidden" placeholder="NEAT kcal">
 
-<label for="grassi">Grassi in % (es. 20):</label>
-<input type="number" id="grassi" min="0" max="100" step="1" placeholder="Inserisci % grassi">
+<hr>
 
-<label for="carbo">Carbo in % (es. 20):</label>
-<input type="number" id="carbo" min="0" max="100" step="1" placeholder="Inserisci % carboidrati">
+<label>Giorno</label>
+<select id="giorno">
+<option>Lunedì</option>
+<option>Martedì</option>
+<option>Mercoledì</option>
+<option>Giovedì</option>
+<option>Venerdì</option>
+<option>Sabato</option>
+<option>Domenica</option>
+</select>
 
-<button onclick="calcola()">Salva Giorno</button>
+<label>Km corsa</label>
+<input type="number" id="km" step="0.1">
+
+<label>Deficit calorico</label>
+<input type="number" id="deficit">
+
+<label>% Proteine</label>
+<input type="number" id="proteine">
+
+<label>% Carboidrati</label>
+<input type="number" id="carbo">
+
+<label>% Grassi</label>
+<input type="number" id="grassi">
+
+<button class="primary" onclick="calcola()">Salva Giorno</button>
 <button class="reset-btn" onclick="resetSettimana()">Cancella Settimana</button>
-<button onclick="downloadExcel()">Scarica Excel</button>
+<button class="download-btn" onclick="downloadExcel()">Scarica Excel</button>
 
+<div class="table-wrapper">
 <table>
-    <thead>
-        <tr>
-            <th>Giorno</th>
-            <th>% Proteine</th>
-            <th>% Carbo</th>
-            <th>% Grassi</th>
-            <th>Km corsa</th>
-            <th>Calorie</th>
-            <th>Proteine (g)</th>
-            <th>Carbo (g)</th>
-            <th>Grassi (g)</th>
-        </tr>
-    </thead>
-    <tbody id="tabella"></tbody>
-    <tfoot>
-        <tr class="totale">
-            <td>Totale Settimanale</td>
-            <td id="totProPerc"></td>
-            <td id="totCarbPerc"></td>
-            <td id="totGrassPerc"></td>
-            <td id="totKm"></td>
-            <td id="totCal"></td>
-            <td id="totPro"></td>
-            <td id="totCarb"></td>
-            <td id="totGrass"></td>
-        </tr>
-    </tfoot>
+<thead>
+<tr>
+<th>Giorno</th>
+<th>% Pro</th>
+<th>% Carb</th>
+<th>% Grassi</th>
+<th>Km</th>
+<th>Cal</th>
+<th>Pro (g)</th>
+<th>Carb (g)</th>
+<th>Grassi (g)</th>
+</tr>
+</thead>
+<tbody id="tabella"></tbody>
+<tfoot>
+<tr class="totale">
+<td>Tot</td>
+<td id="totProPerc"></td>
+<td id="totCarbPerc"></td>
+<td id="totGrassPerc"></td>
+<td id="totKm"></td>
+<td id="totCal"></td>
+<td id="totPro"></td>
+<td id="totCarb"></td>
+<td id="totGrass"></td>
+</tr>
+</tfoot>
 </table>
+</div>
+
+</div>
 
 <script>
 let dati = JSON.parse(localStorage.getItem("settimana")) || {};
-const giorniOrdine = ["Lunedì","Martedì","Mercoledì","Giovedì","Venerdì","Sabato","Domenica"];
+const giorniOrdine=["Lunedì","Martedì","Mercoledì","Giovedì","Venerdì","Sabato","Domenica"];
 
-// Anteprima peso
-const pesoInput = document.getElementById('peso');
-const pesoDisplay = document.getElementById('pesoDisplay');
-pesoInput.addEventListener('input', () => {
-    pesoDisplay.textContent = pesoInput.value;
+const peso=document.getElementById("peso");
+const altezza=document.getElementById("altezza");
+const eta=document.getElementById("eta");
+const sesso=document.getElementById("sesso");
+const attivita=document.getElementById("attivita");
+const pesoDisplay=document.getElementById("pesoDisplay");
+const manualBMRCheckbox=document.getElementById("manualBMR");
+const manualBMRInput=document.getElementById("manualBMRInput");
+const manualNEATCheckbox=document.getElementById("manualNEAT");
+const manualNEATInput=document.getElementById("manualNEATInput");
+
+peso.value=localStorage.getItem("peso")||"";
+altezza.value=localStorage.getItem("altezza")||"";
+eta.value=localStorage.getItem("eta")||"";
+sesso.value=localStorage.getItem("sesso")||"uomo";
+attivita.value=localStorage.getItem("attivita")||"1.55";
+pesoDisplay.textContent=peso.value||0;
+
+[peso,altezza,eta,sesso,attivita].forEach(input=>{
+    input.addEventListener("input",()=>{
+        localStorage.setItem("peso",peso.value);
+        localStorage.setItem("altezza",altezza.value);
+        localStorage.setItem("eta",eta.value);
+        localStorage.setItem("sesso",sesso.value);
+        localStorage.setItem("attivita",attivita.value);
+        pesoDisplay.textContent=peso.value||0;
+    });
 });
 
-function calcola() {
-    const giorno = document.getElementById("giorno").value;
-    const km = parseFloat(document.getElementById("km").value) || 0;
-    const deficit = parseFloat(document.getElementById("deficit").value) || 0;
-    const peso = parseFloat(document.getElementById("peso").value) || 0;
-    const proteinePerc = parseFloat(document.getElementById("proteine").value) || 0;
-    const grassiPerc = parseFloat(document.getElementById("grassi").value) || 0;
-    const carboPerc = parseFloat(document.getElementById("carbo").value) || 0;
+manualBMRCheckbox.addEventListener("change",()=>{
+    manualBMRInput.classList.toggle("hidden",!manualBMRCheckbox.checked);
+});
+manualNEATCheckbox.addEventListener("change",()=>{
+    manualNEATInput.classList.toggle("hidden",!manualNEATCheckbox.checked);
+});
 
-    const calorieBase = 1500;
-    const calorieCorsa = km * peso;
-    const TDEE = 100;
-    const calorieTotali = Math.max(0, calorieBase + calorieCorsa + TDEE - deficit);
+function calcola(){
+    const giorno=document.getElementById("giorno").value;
+    const km=parseFloat(document.getElementById("km").value)||0;
+    const deficit=parseFloat(document.getElementById("deficit").value)||0;
+    const proteinePerc=parseFloat(document.getElementById("proteine").value)||0;
+    const carboPerc=parseFloat(document.getElementById("carbo").value)||0;
+    const grassiPerc=parseFloat(document.getElementById("grassi").value)||0;
 
-    const proteineGr = (calorieTotali * (proteinePerc/100)) / 4;
-    const carboGr = (calorieTotali * (carboPerc/100)) / 4;
-    const grassiGr = (calorieTotali * (grassiPerc/100)) / 9;
+    if(!peso.value||!altezza.value||!eta.value){
+        alert("Inserisci dati profilo completi");
+        return;
+    }
+    if(proteinePerc+carboPerc+grassiPerc!==100){
+        alert("Le percentuali devono sommare 100%");
+        return;
+    }
 
-    dati[giorno] = {
-        proteinePerc,
-        carboPerc,
-        grassiPerc,
-        km,
-        calorie: calorieTotali,
-        proteine: proteineGr,
-        carbo: carboGr,
-        grassi: grassiGr
-    };
+    const pesoNum=parseFloat(peso.value);
+    const altezzaNum=parseFloat(altezza.value);
+    const etaNum=parseFloat(eta.value);
+    const attivitaNum=parseFloat(attivita.value);
 
-    localStorage.setItem("settimana", JSON.stringify(dati));
+    // 🔹 Calcolo BMR automatico
+    let BMR;
+    if(manualBMRCheckbox.checked && manualBMRInput.value){
+        BMR=parseFloat(manualBMRInput.value);
+    }else{
+        if(sesso.value==="uomo"){BMR=(10*pesoNum)+(6.25*altezzaNum)-(5*etaNum)+5;}
+        else{BMR=(10*pesoNum)+(6.25*altezzaNum)-(5*etaNum)-161;}
+    }
 
-    document.getElementById("km").value = '';
-    document.getElementById("deficit").value = '';
-    document.getElementById("proteine").value = '';
-    document.getElementById("grassi").value = '';
-    document.getElementById("carbo").value = '';
+    // 🔹 Calcolo NEAT automatico
+    let NEAT;
+    if(manualNEATCheckbox.checked && manualNEATInput.value){
+        NEAT=parseFloat(manualNEATInput.value);
+    }else{
+        NEAT=BMR*attivitaNum-BMR; // NEAT stimato come parte del TDEE
+    }
 
+    const calorieCorsa=km*pesoNum;
+    let calorieTotali=BMR+NEAT+calorieCorsa-deficit;
+    if(calorieTotali<BMR) calorieTotali=BMR;
+
+    const proteineGr=(calorieTotali*(proteinePerc/100))/4;
+    const carboGr=(calorieTotali*(carboPerc/100))/4;
+    const grassiGr=(calorieTotali*(grassiPerc/100))/9;
+
+    dati[giorno]={proteinePerc,carboPerc,grassiPerc,km,calorie:calorieTotali,proteine:proteineGr,carbo:carboGr,grassi:grassiGr};
+    localStorage.setItem("settimana",JSON.stringify(dati));
     aggiornaTabella();
 }
 
-function aggiornaTabella() {
-    const tbody = document.getElementById("tabella");
-    tbody.innerHTML = "";
+function aggiornaTabella(){
+    const tbody=document.getElementById("tabella");
+    tbody.innerHTML="";
+    let totCal=0,totPro=0,totCarb=0,totGrass=0,totKm=0;
+    let totProPerc=0,totCarbPerc=0,totGrassPerc=0,count=0;
 
-    let totCal = 0, totPro = 0, totCarb = 0, totGrass = 0, totKm = 0;
-    let totProPerc = 0, totCarbPerc = 0, totGrassPerc = 0;
-    let count = 0;
-
-    giorniOrdine.forEach(giorno => {
-        const d = dati[giorno];
-        if(d) {
-            tbody.innerHTML += `
-                <tr>
-                    <td>${giorno}</td>
-                    <td>${d.proteinePerc}%</td>
-                    <td>${d.carboPerc}%</td>
-                    <td>${d.grassiPerc}%</td>
-                    <td>${d.km.toFixed(1)}</td>
-                    <td>${d.calorie.toFixed(0)}</td>
-                    <td>${d.proteine.toFixed(1)} g</td>
-                    <td>${d.carbo.toFixed(1)} g</td>
-                    <td>${d.grassi.toFixed(1)} g</td>
-                </tr>
-            `;
-
-            totCal += d.calorie;
-            totPro += d.proteine;
-            totCarb += d.carbo;
-            totGrass += d.grassi;
-            totKm += d.km;
-
-            totProPerc += d.proteinePerc;
-            totCarbPerc += d.carboPerc;
-            totGrassPerc += d.grassiPerc;
-            count++;
+    giorniOrdine.forEach(g=>{
+        if(dati[g]){
+            let d=dati[g];
+            tbody.innerHTML+=`<tr>
+            <td>${g}</td>
+            <td>${d.proteinePerc}%</td>
+            <td>${d.carboPerc}%</td>
+            <td>${d.grassiPerc}%</td>
+            <td>${d.km}</td>
+            <td>${d.calorie.toFixed(0)}</td>
+            <td>${d.proteine.toFixed(1)}</td>
+            <td>${d.carbo.toFixed(1)}</td>
+            <td>${d.grassi.toFixed(1)}</td>
+            </tr>`;
+            totCal+=d.calorie; totPro+=d.proteine; totCarb+=d.carbo; totGrass+=d.grassi; totKm+=d.km;
+            totProPerc+=d.proteinePerc; totCarbPerc+=d.carboPerc; totGrassPerc+=d.grassiPerc; count++;
         }
     });
 
-    document.getElementById("totCal").innerText = totCal.toFixed(0);
-    document.getElementById("totPro").innerText = totPro.toFixed(1) + " g";
-    document.getElementById("totCarb").innerText = totCarb.toFixed(1) + " g";
-    document.getElementById("totGrass").innerText = totGrass.toFixed(1) + " g";
-    document.getElementById("totKm").innerText = totKm.toFixed(1);
-
-    document.getElementById("totProPerc").innerText = count ? (totProPerc/count).toFixed(1) + "%" : "0%";
-    document.getElementById("totCarbPerc").innerText = count ? (totCarbPerc/count).toFixed(1) + "%" : "0%";
-    document.getElementById("totGrassPerc").innerText = count ? (totGrassPerc/count).toFixed(1) + "%" : "0%";
+    document.getElementById("totCal").innerText=totCal.toFixed(0);
+    document.getElementById("totPro").innerText=totPro.toFixed(1);
+    document.getElementById("totCarb").innerText=totCarb.toFixed(1);
+    document.getElementById("totGrass").innerText=totGrass.toFixed(1);
+    document.getElementById("totKm").innerText=totKm.toFixed(1);
+    document.getElementById("totProPerc").innerText=count?(totProPerc/count).toFixed(1)+"%":"0%";
+    document.getElementById("totCarbPerc").innerText=count?(totCarbPerc/count).toFixed(1)+"%":"0%";
+    document.getElementById("totGrassPerc").innerText=count?(totGrassPerc/count).toFixed(1)+"%":"0%";
 }
 
-function resetSettimana() {
-    if(confirm("Sei sicuro di voler cancellare tutti i dati della settimana?")) {
-        dati = {};
+function resetSettimana(){
+    if(confirm("Vuoi cancellare la settimana?")){
+        dati={};
         localStorage.removeItem("settimana");
         aggiornaTabella();
     }
 }
 
-function downloadExcel() {
-    if (Object.keys(dati).length === 0) {
-        alert("Non ci sono dati da scaricare!");
-        return;
-    }
-
-    let csvContent = "Giorno,% Proteine,% Carbo,% Grassi,Km corsa,Calorie,Proteine (g),Carbo (g),Grassi (g)\n";
-
-    giorniOrdine.forEach(giorno => {
-        const d = dati[giorno];
-        if(d) {
-            csvContent += `${giorno},${d.proteinePerc},${d.carboPerc},${d.grassiPerc},${d.km.toFixed(1)},${d.calorie.toFixed(0)},${d.proteine.toFixed(1)},${d.carbo.toFixed(1)},${d.grassi.toFixed(1)}\n`;
+function downloadExcel(){
+    if(Object.keys(dati).length===0){alert("Nessun dato da scaricare"); return;}
+    let table=`<table border="1"><tr>
+    <th>Giorno</th><th>% Pro</th><th>% Carb</th><th>% Grassi</th>
+    <th>Km</th><th>Calorie</th><th>Pro (g)</th><th>Carb (g)</th><th>Grassi (g)</th>
+    </tr>`;
+    giorniOrdine.forEach(g=>{
+        if(dati[g]){
+            let d=dati[g];
+            table+=`<tr>
+            <td>${g}</td>
+            <td>${d.proteinePerc}%</td>
+            <td>${d.carboPerc}%</td>
+            <td>${d.grassiPerc}%</td>
+            <td>${d.km}</td>
+            <td>${d.calorie.toFixed(0)}</td>
+            <td>${d.proteine.toFixed(1)}</td>
+            <td>${d.carbo.toFixed(1)}</td>
+            <td>${d.grassi.toFixed(1)}</td>
+            </tr>`;
         }
     });
-
-    // Totali
-    let totCal = 0, totPro = 0, totCarb = 0, totGrass = 0, totKm = 0;
-    let totProPerc = 0, totCarbPerc = 0, totGrassPerc = 0;
-    let count = 0;
-    giorniOrdine.forEach(giorno => {
-        const d = dati[giorno];
-        if(d) {
-            totCal += d.calorie;
-            totPro += d.proteine;
-            totCarb += d.carbo;
-            totGrass += d.grassi;
-            totKm += d.km;
-            totProPerc += d.proteinePerc;
-            totCarbPerc += d.carboPerc;
-            totGrassPerc += d.grassiPerc;
-            count++;
-        }
-    });
-
-    csvContent += `Totale Settimanale,${(totProPerc/count).toFixed(1)},${(totCarbPerc/count).toFixed(1)},${(totGrassPerc/count).toFixed(1)},${totKm.toFixed(1)},${totCal.toFixed(0)},${totPro.toFixed(1)},${totCarb.toFixed(1)},${totGrass.toFixed(1)}\n`;
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = "SettimanaNutrizione.csv";
-    link.style.display = "none";
-    document.body.appendChild(link);
+    table+=`</table>`;
+    const blob=new Blob([`<html><body>${table}</body></html>`],{type:"application/vnd.ms-excel"});
+    const link=document.createElement("a");
+    link.href=URL.createObjectURL(blob);
+    link.download="SettimanaNutrizione.xls";
     link.click();
-    document.body.removeChild(link);
 }
 
 aggiornaTabella();
+
 </script>
 
 </body>
