@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Calcolatore Nutrizione Settimanale</title>
-
 <style>
 *{box-sizing:border-box;}
 body{font-family:Arial,sans-serif;margin:0;padding:15px;background:#f4f4f4;}
@@ -62,16 +61,8 @@ th{background:#eee;}
 
 <hr>
 
-<label>Giorno</label>
-<select id="giorno">
-<option>Lunedì</option>
-<option>Martedì</option>
-<option>Mercoledì</option>
-<option>Giovedì</option>
-<option>Venerdì</option>
-<option>Sabato</option>
-<option>Domenica</option>
-</select>
+<label>Seleziona Data</label>
+<input type="date" id="giorno">
 
 <label>Km corsa</label>
 <input type="number" id="km" step="0.1">
@@ -96,6 +87,7 @@ th{background:#eee;}
 <table>
 <thead>
 <tr>
+<th>Data</th>
 <th>Giorno</th>
 <th>% Pro</th>
 <th>% Carb</th>
@@ -111,6 +103,7 @@ th{background:#eee;}
 <tfoot>
 <tr class="totale">
 <td>Tot</td>
+<td></td>
 <td id="totProPerc"></td>
 <td id="totCarbPerc"></td>
 <td id="totGrassPerc"></td>
@@ -123,7 +116,6 @@ th{background:#eee;}
 </tfoot>
 </table>
 </div>
-
 </div>
 
 <script>
@@ -167,7 +159,11 @@ manualNEATCheckbox.addEventListener("change",()=>{
 });
 
 function calcola(){
-    const giorno=document.getElementById("giorno").value;
+    const dataSelezionata=document.getElementById("giorno").value;
+    if(!dataSelezionata){ alert("Seleziona una data"); return;}
+    const data = new Date(dataSelezionata);
+    const giornoSettimana = giorniOrdine[data.getDay()===0?6:data.getDay()-1];
+
     const km=parseFloat(document.getElementById("km").value)||0;
     const deficit=parseFloat(document.getElementById("deficit").value)||0;
     const proteinePerc=parseFloat(document.getElementById("proteine").value)||0;
@@ -188,22 +184,12 @@ function calcola(){
     const etaNum=parseFloat(eta.value);
     const attivitaNum=parseFloat(attivita.value);
 
-    // 🔹 Calcolo BMR automatico
-    let BMR;
-    if(manualBMRCheckbox.checked && manualBMRInput.value){
-        BMR=parseFloat(manualBMRInput.value);
-    }else{
-        if(sesso.value==="uomo"){BMR=(10*pesoNum)+(6.25*altezzaNum)-(5*etaNum)+5;}
-        else{BMR=(10*pesoNum)+(6.25*altezzaNum)-(5*etaNum)-161;}
-    }
+    let BMR = (manualBMRCheckbox.checked && manualBMRInput.value)?parseFloat(manualBMRInput.value):
+              (sesso.value==="uomo"?(10*pesoNum)+(6.25*altezzaNum)-(5*etaNum)+5:
+                                    (10*pesoNum)+(6.25*altezzaNum)-(5*etaNum)-161);
 
-    // 🔹 Calcolo NEAT automatico
-    let NEAT;
-    if(manualNEATCheckbox.checked && manualNEATInput.value){
-        NEAT=parseFloat(manualNEATInput.value);
-    }else{
-        NEAT=BMR*attivitaNum-BMR; // NEAT stimato come parte del TDEE
-    }
+    let NEAT = (manualNEATCheckbox.checked && manualNEATInput.value)?parseFloat(manualNEATInput.value):
+               BMR*attivitaNum-BMR;
 
     const calorieCorsa=km*pesoNum;
     let calorieTotali=BMR+NEAT+calorieCorsa-deficit;
@@ -213,7 +199,7 @@ function calcola(){
     const carboGr=(calorieTotali*(carboPerc/100))/4;
     const grassiGr=(calorieTotali*(grassiPerc/100))/9;
 
-    dati[giorno]={proteinePerc,carboPerc,grassiPerc,km,calorie:calorieTotali,proteine:proteineGr,carbo:carboGr,grassi:grassiGr};
+    dati[dataSelezionata]={data:dataSelezionata,giornoSettimana,proteinePerc,carboPerc,grassiPerc,km,calorie:calorieTotali,proteine:proteineGr,carbo:carboGr,grassi:grassiGr};
     localStorage.setItem("settimana",JSON.stringify(dati));
     aggiornaTabella();
 }
@@ -224,11 +210,11 @@ function aggiornaTabella(){
     let totCal=0,totPro=0,totCarb=0,totGrass=0,totKm=0;
     let totProPerc=0,totCarbPerc=0,totGrassPerc=0,count=0;
 
-    giorniOrdine.forEach(g=>{
-        if(dati[g]){
-            let d=dati[g];
-            tbody.innerHTML+=`<tr>
-            <td>${g}</td>
+    Object.keys(dati).sort().forEach(date=>{
+        const d=dati[date];
+        tbody.innerHTML+=`<tr>
+            <td>${d.data}</td>
+            <td>${d.giornoSettimana}</td>
             <td>${d.proteinePerc}%</td>
             <td>${d.carboPerc}%</td>
             <td>${d.grassiPerc}%</td>
@@ -237,10 +223,9 @@ function aggiornaTabella(){
             <td>${d.proteine.toFixed(1)}</td>
             <td>${d.carbo.toFixed(1)}</td>
             <td>${d.grassi.toFixed(1)}</td>
-            </tr>`;
-            totCal+=d.calorie; totPro+=d.proteine; totCarb+=d.carbo; totGrass+=d.grassi; totKm+=d.km;
-            totProPerc+=d.proteinePerc; totCarbPerc+=d.carboPerc; totGrassPerc+=d.grassiPerc; count++;
-        }
+        </tr>`;
+        totCal+=d.calorie; totPro+=d.proteine; totCarb+=d.carbo; totGrass+=d.grassi; totKm+=d.km;
+        totProPerc+=d.proteinePerc; totCarbPerc+=d.carboPerc; totGrassPerc+=d.grassiPerc; count++;
     });
 
     document.getElementById("totCal").innerText=totCal.toFixed(0);
@@ -264,14 +249,14 @@ function resetSettimana(){
 function downloadExcel(){
     if(Object.keys(dati).length===0){alert("Nessun dato da scaricare"); return;}
     let table=`<table border="1"><tr>
-    <th>Giorno</th><th>% Pro</th><th>% Carb</th><th>% Grassi</th>
+    <th>Data</th><th>Giorno</th><th>% Pro</th><th>% Carb</th><th>% Grassi</th>
     <th>Km</th><th>Calorie</th><th>Pro (g)</th><th>Carb (g)</th><th>Grassi (g)</th>
     </tr>`;
-    giorniOrdine.forEach(g=>{
-        if(dati[g]){
-            let d=dati[g];
-            table+=`<tr>
-            <td>${g}</td>
+    Object.keys(dati).sort().forEach(date=>{
+        const d=dati[date];
+        table+=`<tr>
+            <td>${d.data}</td>
+            <td>${d.giornoSettimana}</td>
             <td>${d.proteinePerc}%</td>
             <td>${d.carboPerc}%</td>
             <td>${d.grassiPerc}%</td>
@@ -280,8 +265,7 @@ function downloadExcel(){
             <td>${d.proteine.toFixed(1)}</td>
             <td>${d.carbo.toFixed(1)}</td>
             <td>${d.grassi.toFixed(1)}</td>
-            </tr>`;
-        }
+        </tr>`;
     });
     table+=`</table>`;
     const blob=new Blob([`<html><body>${table}</body></html>`],{type:"application/vnd.ms-excel"});
@@ -292,8 +276,6 @@ function downloadExcel(){
 }
 
 aggiornaTabella();
-
 </script>
-
 </body>
 </html>
