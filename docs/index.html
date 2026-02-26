@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Calcolatore Nutrizione Settimanale</title>
+<title>Calcolatore Nutrizione Avanzato con Bici</title>
 <style>
 *{box-sizing:border-box;}
 body{font-family:Arial,sans-serif;margin:0;padding:15px;background:#f4f4f4;}
@@ -21,29 +21,26 @@ th,td{padding:8px;border:1px solid #ddd;text-align:center;font-size:14px;}
 th{background:#eee;}
 .totale{font-weight:bold;background:#e0ffe0;}
 .hidden{display:none;}
+canvas{max-width:100%;margin-top:20px;}
 </style>
 </head>
 <body>
 <div class="container">
+<h2>Calcolatore Nutrizione Settimanale Avanzato</h2>
 
-<h2>Calcolatore Nutrizione Settimanale</h2>
-
+<!-- Profilo -->
 <label>Peso (kg)</label>
 <input type="number" id="peso" step="0.1">
 <p>Peso: <span id="pesoDisplay">0</span> kg</p>
-
 <label>Altezza (cm)</label>
 <input type="number" id="altezza">
-
 <label>Età</label>
 <input type="number" id="eta">
-
 <label>Sesso</label>
 <select id="sesso">
 <option value="uomo">Uomo</option>
 <option value="donna">Donna</option>
 </select>
-
 <label>Livello attività</label>
 <select id="attivita">
 <option value="1.2">Sedentario</option>
@@ -55,34 +52,39 @@ th{background:#eee;}
 
 <label><input type="checkbox" id="manualBMR"> Inserisci BMR manualmente</label>
 <input type="number" id="manualBMRInput" class="hidden" placeholder="Calorie basali">
-
 <label><input type="checkbox" id="manualNEAT"> Inserisci NEAT manualmente</label>
 <input type="number" id="manualNEATInput" class="hidden" placeholder="NEAT kcal">
 
 <hr>
 
+<!-- Giorno e input nutrizionali -->
 <label>Seleziona Data</label>
 <input type="date" id="giorno">
-
 <label>Km corsa</label>
 <input type="number" id="km" step="0.1">
+<label>Km bicicletta</label>
+<input type="number" id="kmBici" step="0.1" placeholder="Inserisci km bici">
+<label>Intensità bicicletta</label>
+<select id="intensitaBici">
+    <option value="0.25">Leggero</option>
+    <option value="0.35" selected>Moderato</option>
+    <option value="0.5">Intenso</option>
+</select>
 
 <label>Deficit calorico</label>
 <input type="number" id="deficit">
-
 <label>% Proteine</label>
-<input type="number" id="proteine">
-
+<input type="number" id="proteine" value="20">
 <label>% Carboidrati</label>
-<input type="number" id="carbo">
-
+<input type="number" id="carbo" value="60">
 <label>% Grassi</label>
-<input type="number" id="grassi">
+<input type="number" id="grassi" value="20">
 
 <button class="primary" onclick="calcola()">Salva Giorno</button>
 <button class="reset-btn" onclick="resetSettimana()">Cancella Settimana</button>
 <button class="download-btn" onclick="downloadExcel()">Scarica Excel</button>
 
+<!-- Tabella dati -->
 <div class="table-wrapper">
 <table>
 <thead>
@@ -92,7 +94,8 @@ th{background:#eee;}
 <th>% Pro</th>
 <th>% Carb</th>
 <th>% Grassi</th>
-<th>Km</th>
+<th>Km Corsa</th>
+<th>Km Bici</th>
 <th>Cal</th>
 <th>Pro (g)</th>
 <th>Carb (g)</th>
@@ -102,21 +105,22 @@ th{background:#eee;}
 <tbody id="tabella"></tbody>
 <tfoot>
 <tr class="totale">
-<td>Tot</td>
-<td></td>
-<td id="totProPerc"></td>
-<td id="totCarbPerc"></td>
-<td id="totGrassPerc"></td>
-<td id="totKm"></td>
+<td>Tot</td><td></td>
+<td id="totProPerc"></td><td id="totCarbPerc"></td><td id="totGrassPerc"></td>
+<td id="totKm"></td><td id="totKmBici"></td>
 <td id="totCal"></td>
-<td id="totPro"></td>
-<td id="totCarb"></td>
-<td id="totGrass"></td>
+<td id="totPro"></td><td id="totCarb"></td><td id="totGrass"></td>
 </tr>
 </tfoot>
 </table>
 </div>
-</div>
+
+<!-- Grafici -->
+<canvas id="calorieChart"></canvas>
+<canvas id="macroChart"></canvas>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
 let dati = JSON.parse(localStorage.getItem("settimana")) || {};
@@ -158,6 +162,22 @@ manualNEATCheckbox.addEventListener("change",()=>{
     manualNEATInput.classList.toggle("hidden",!manualNEATCheckbox.checked);
 });
 
+// Chart.js inizializzazione
+let calorieChart = new Chart(document.getElementById("calorieChart").getContext('2d'), {
+    type:'line',
+    data:{labels:[], datasets:[{label:'Calorie Totali', data:[], borderColor:'red', tension:0.3, fill:false}]},
+    options:{responsive:true, plugins:{legend:{display:true}}}
+});
+let macroChart = new Chart(document.getElementById("macroChart").getContext('2d'), {
+    type:'line',
+    data:{labels:[], datasets:[
+        {label:'Proteine (g)', data:[], borderColor:'blue', tension:0.3, fill:false},
+        {label:'Carboidrati (g)', data:[], borderColor:'green', tension:0.3, fill:false},
+        {label:'Grassi (g)', data:[], borderColor:'orange', tension:0.3, fill:false},
+    ]},
+    options:{responsive:true, plugins:{legend:{display:true}}}
+});
+
 function calcola(){
     const dataSelezionata=document.getElementById("giorno").value;
     if(!dataSelezionata){ alert("Seleziona una data"); return;}
@@ -165,18 +185,20 @@ function calcola(){
     const giornoSettimana = giorniOrdine[data.getDay()===0?6:data.getDay()-1];
 
     const km=parseFloat(document.getElementById("km").value)||0;
+    const kmBici=parseFloat(document.getElementById("kmBici").value)||0;
+    const coeffBici=parseFloat(document.getElementById("intensitaBici").value)||0.35;
+    const calorieBici=kmBici*peso.value*coeffBici;
+
     const deficit=parseFloat(document.getElementById("deficit").value)||0;
-    const proteinePerc=parseFloat(document.getElementById("proteine").value)||0;
-    const carboPerc=parseFloat(document.getElementById("carbo").value)||0;
-    const grassiPerc=parseFloat(document.getElementById("grassi").value)||0;
+    const proteinePerc=parseFloat(document.getElementById("proteine").value)||20;
+    const carboPerc=parseFloat(document.getElementById("carbo").value)||60;
+    const grassiPerc=parseFloat(document.getElementById("grassi").value)||20;
 
     if(!peso.value||!altezza.value||!eta.value){
-        alert("Inserisci dati profilo completi");
-        return;
+        alert("Inserisci dati profilo completi"); return;
     }
     if(proteinePerc+carboPerc+grassiPerc!==100){
-        alert("Le percentuali devono sommare 100%");
-        return;
+        alert("Le percentuali devono sommare 100%"); return;
     }
 
     const pesoNum=parseFloat(peso.value);
@@ -187,19 +209,18 @@ function calcola(){
     let BMR = (manualBMRCheckbox.checked && manualBMRInput.value)?parseFloat(manualBMRInput.value):
               (sesso.value==="uomo"?(10*pesoNum)+(6.25*altezzaNum)-(5*etaNum)+5:
                                     (10*pesoNum)+(6.25*altezzaNum)-(5*etaNum)-161);
-
     let NEAT = (manualNEATCheckbox.checked && manualNEATInput.value)?parseFloat(manualNEATInput.value):
                BMR*attivitaNum-BMR;
 
     const calorieCorsa=km*pesoNum;
-    let calorieTotali=BMR+NEAT+calorieCorsa-deficit;
+    let calorieTotali=BMR+NEAT+calorieCorsa+calorieBici-deficit;
     if(calorieTotali<BMR) calorieTotali=BMR;
 
     const proteineGr=(calorieTotali*(proteinePerc/100))/4;
     const carboGr=(calorieTotali*(carboPerc/100))/4;
     const grassiGr=(calorieTotali*(grassiPerc/100))/9;
 
-    dati[dataSelezionata]={data:dataSelezionata,giornoSettimana,proteinePerc,carboPerc,grassiPerc,km,calorie:calorieTotali,proteine:proteineGr,carbo:carboGr,grassi:grassiGr};
+    dati[dataSelezionata]={data:dataSelezionata,giornoSettimana,proteinePerc,carboPerc,grassiPerc,km,kmBici,calorie:calorieTotali,proteine:proteineGr,carbo:carboGr,grassi:grassiGr};
     localStorage.setItem("settimana",JSON.stringify(dati));
     aggiornaTabella();
 }
@@ -207,10 +228,13 @@ function calcola(){
 function aggiornaTabella(){
     const tbody=document.getElementById("tabella");
     tbody.innerHTML="";
-    let totCal=0,totPro=0,totCarb=0,totGrass=0,totKm=0;
+    let totCal=0,totPro=0,totCarb=0,totGrass=0,totKm=0,totKmBici=0;
     let totProPerc=0,totCarbPerc=0,totGrassPerc=0,count=0;
 
-    Object.keys(dati).sort().forEach(date=>{
+    const dates = Object.keys(dati).sort();
+    const labels = [], calorieData = [], proteineData = [], carboData = [], grassiData = [];
+
+    dates.forEach(date=>{
         const d=dati[date];
         tbody.innerHTML+=`<tr>
             <td>${d.data}</td>
@@ -219,13 +243,21 @@ function aggiornaTabella(){
             <td>${d.carboPerc}%</td>
             <td>${d.grassiPerc}%</td>
             <td>${d.km}</td>
+            <td>${d.kmBici}</td>
             <td>${d.calorie.toFixed(0)}</td>
             <td>${d.proteine.toFixed(1)}</td>
             <td>${d.carbo.toFixed(1)}</td>
             <td>${d.grassi.toFixed(1)}</td>
         </tr>`;
-        totCal+=d.calorie; totPro+=d.proteine; totCarb+=d.carbo; totGrass+=d.grassi; totKm+=d.km;
+        totCal+=d.calorie; totPro+=d.proteine; totCarb+=d.carbo; totGrass+=d.grassi;
+        totKm+=d.km; totKmBici+=d.kmBici;
         totProPerc+=d.proteinePerc; totCarbPerc+=d.carboPerc; totGrassPerc+=d.grassiPerc; count++;
+
+        labels.push(d.data);
+        calorieData.push(d.calorie.toFixed(0));
+        proteineData.push(d.proteine.toFixed(1));
+        carboData.push(d.carbo.toFixed(1));
+        grassiData.push(d.grassi.toFixed(1));
     });
 
     document.getElementById("totCal").innerText=totCal.toFixed(0);
@@ -233,9 +265,21 @@ function aggiornaTabella(){
     document.getElementById("totCarb").innerText=totCarb.toFixed(1);
     document.getElementById("totGrass").innerText=totGrass.toFixed(1);
     document.getElementById("totKm").innerText=totKm.toFixed(1);
+    document.getElementById("totKmBici").innerText=totKmBici.toFixed(1);
     document.getElementById("totProPerc").innerText=count?(totProPerc/count).toFixed(1)+"%":"0%";
     document.getElementById("totCarbPerc").innerText=count?(totCarbPerc/count).toFixed(1)+"%":"0%";
     document.getElementById("totGrassPerc").innerText=count?(totGrassPerc/count).toFixed(1)+"%":"0%";
+
+    // Aggiorna grafici
+    calorieChart.data.labels = labels;
+    calorieChart.data.datasets[0].data = calorieData;
+    calorieChart.update();
+
+    macroChart.data.labels = labels;
+    macroChart.data.datasets[0].data = proteineData;
+    macroChart.data.datasets[1].data = carboData;
+    macroChart.data.datasets[2].data = grassiData;
+    macroChart.update();
 }
 
 function resetSettimana(){
@@ -250,7 +294,7 @@ function downloadExcel(){
     if(Object.keys(dati).length===0){alert("Nessun dato da scaricare"); return;}
     let table=`<table border="1"><tr>
     <th>Data</th><th>Giorno</th><th>% Pro</th><th>% Carb</th><th>% Grassi</th>
-    <th>Km</th><th>Calorie</th><th>Pro (g)</th><th>Carb (g)</th><th>Grassi (g)</th>
+    <th>Km Corsa</th><th>Km Bici</th><th>Calorie</th><th>Pro (g)</th><th>Carb (g)</th><th>Grassi (g)</th>
     </tr>`;
     Object.keys(dati).sort().forEach(date=>{
         const d=dati[date];
@@ -261,6 +305,7 @@ function downloadExcel(){
             <td>${d.carboPerc}%</td>
             <td>${d.grassiPerc}%</td>
             <td>${d.km}</td>
+            <td>${d.kmBici}</td>
             <td>${d.calorie.toFixed(0)}</td>
             <td>${d.proteine.toFixed(1)}</td>
             <td>${d.carbo.toFixed(1)}</td>
