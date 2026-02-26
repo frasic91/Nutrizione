@@ -24,6 +24,7 @@ th{background:#eee;}
 .hidden{display:none;}
 canvas{max-width:100%;margin-top:20px;}
 hr{margin:20px 0;}
+small{color:#666;}
 </style>
 </head>
 
@@ -31,6 +32,8 @@ hr{margin:20px 0;}
 <div class="container">
 
 <h2>Calcolatore Nutrizione Settimanale Avanzato</h2>
+
+<h3>Profilo</h3>
 
 <label>Peso (kg)</label>
 <input type="number" id="peso" step="0.1">
@@ -47,7 +50,7 @@ hr{margin:20px 0;}
 <option value="donna">Donna</option>
 </select>
 
-<label>Livello attività</label>
+<label>Livello attività (per NEAT automatico)</label>
 <select id="attivita">
 <option value="1.2">Sedentario</option>
 <option value="1.375">Leggermente attivo</option>
@@ -55,6 +58,28 @@ hr{margin:20px 0;}
 <option value="1.725">Molto attivo</option>
 <option value="1.9">Estremamente attivo</option>
 </select>
+
+<hr>
+
+<h3>BMR (Metabolismo Basale)</h3>
+
+<select id="modalitaBMR">
+<option value="auto">Calcolo automatico (Mifflin-St Jeor)</option>
+<option value="manuale">Inserimento manuale</option>
+</select>
+
+<input type="number" id="bmrManuale" class="hidden" placeholder="Inserisci BMR manuale (kcal)">
+
+<hr>
+
+<h3>NEAT</h3>
+
+<select id="modalitaNEAT">
+<option value="auto">Calcolo automatico (da attività)</option>
+<option value="manuale">Inserimento manuale</option>
+</select>
+
+<input type="number" id="neatManuale" class="hidden" placeholder="Inserisci NEAT manuale (kcal)">
 
 <hr>
 
@@ -82,6 +107,8 @@ hr{margin:20px 0;}
 <label>Durata (minuti)</label>
 <input type="number" id="durataBici">
 
+<small>Se inserisci Watt e durata viene usato il metodo scientifico.</small>
+
 <hr>
 
 <h3>Target Calorico</h3>
@@ -93,7 +120,7 @@ hr{margin:20px 0;}
 </select>
 
 <label>Quantità kcal</label>
-<input type="number" id="valoreCalorie" placeholder="Es. 300">
+<input type="number" id="valoreCalorie">
 
 <hr>
 
@@ -116,9 +143,9 @@ hr{margin:20px 0;}
 <tr>
 <th>Data</th>
 <th>Calorie</th>
-<th>Pro (g)</th>
-<th>Carb (g)</th>
-<th>Grassi (g)</th>
+<th>Proteine</th>
+<th>Carbo</th>
+<th>Grassi</th>
 </tr>
 </thead>
 <tbody id="tabella"></tbody>
@@ -144,12 +171,40 @@ hr{margin:20px 0;}
 <script>
 let dati = JSON.parse(localStorage.getItem("settimana")) || {};
 
-const modalitaSelect = document.getElementById("modalitaCalorie");
-modalitaSelect.value = localStorage.getItem("modalitaCalorie") || "deficit";
+const modalitaBMR = document.getElementById("modalitaBMR");
+const bmrManualeInput = document.getElementById("bmrManuale");
 
-modalitaSelect.addEventListener("change",()=>{
-localStorage.setItem("modalitaCalorie",modalitaSelect.value);
+const modalitaNEAT = document.getElementById("modalitaNEAT");
+const neatManualeInput = document.getElementById("neatManuale");
+
+modalitaBMR.value = localStorage.getItem("modalitaBMR") || "auto";
+modalitaNEAT.value = localStorage.getItem("modalitaNEAT") || "auto";
+document.getElementById("modalitaCalorie").value = localStorage.getItem("modalitaCalorie") || "deficit";
+
+toggleBMR();
+toggleNEAT();
+
+modalitaBMR.addEventListener("change",()=>{
+localStorage.setItem("modalitaBMR",modalitaBMR.value);
+toggleBMR();
 });
+
+modalitaNEAT.addEventListener("change",()=>{
+localStorage.setItem("modalitaNEAT",modalitaNEAT.value);
+toggleNEAT();
+});
+
+document.getElementById("modalitaCalorie").addEventListener("change",(e)=>{
+localStorage.setItem("modalitaCalorie",e.target.value);
+});
+
+function toggleBMR(){
+bmrManualeInput.classList.toggle("hidden", modalitaBMR.value!=="manuale");
+}
+
+function toggleNEAT(){
+neatManualeInput.classList.toggle("hidden", modalitaNEAT.value!=="manuale");
+}
 
 let calorieChart = new Chart(document.getElementById("calorieChart"), {
 type:'line',
@@ -175,8 +230,21 @@ const attivita=parseFloat(document.getElementById("attivita").value);
 
 if(!peso||!altezza||!eta){alert("Inserisci dati profilo");return;}
 
-let BMR=(sesso==="uomo")?(10*peso+6.25*altezza-5*eta+5):(10*peso+6.25*altezza-5*eta-161);
-let NEAT=BMR*attivita-BMR;
+let BMR;
+
+if(modalitaBMR.value==="manuale"){
+BMR=parseFloat(bmrManualeInput.value)||0;
+}else{
+BMR=(sesso==="uomo")?(10*peso+6.25*altezza-5*eta+5):(10*peso+6.25*altezza-5*eta-161);
+}
+
+let NEAT;
+
+if(modalitaNEAT.value==="manuale"){
+NEAT=parseFloat(neatManualeInput.value)||0;
+}else{
+NEAT=BMR*attivita-BMR;
+}
 
 const km=parseFloat(document.getElementById("km").value)||0;
 const kmBici=parseFloat(document.getElementById("kmBici").value)||0;
@@ -198,13 +266,10 @@ const calorieCorsa=km*peso;
 let calorieTotali=BMR+NEAT+calorieCorsa+calorieBici;
 
 const valore=parseFloat(document.getElementById("valoreCalorie").value)||0;
-const modalita=modalitaSelect.value;
+const modalita=document.getElementById("modalitaCalorie").value;
 
-if(modalita==="deficit"){
-calorieTotali-=valore;
-}else{
-calorieTotali+=valore;
-}
+if(modalita==="deficit"){ calorieTotali-=valore; }
+else{ calorieTotali+=valore; }
 
 if(calorieTotali<BMR) calorieTotali=BMR;
 
@@ -275,7 +340,7 @@ aggiorna();
 }
 
 function downloadExcel(){
-let table=`<table border="1"><tr><th>Data</th><th>Calorie</th><th>Pro</th><th>Carb</th><th>Grassi</th></tr>`;
+let table=`<table border="1"><tr><th>Data</th><th>Calorie</th><th>Proteine</th><th>Carbo</th><th>Grassi</th></tr>`;
 Object.keys(dati).sort().forEach(data=>{
 const d=dati[data];
 table+=`<tr>
